@@ -1,0 +1,14 @@
+.vscode/
+build/
+.devcontainer/
+debug.log
+site/.gitignore
+site/.npmrc
+site/README.md
+site/package-lock.json
+site/package.json
+site/postcss.config.cjs
+site/static/
+site/svelte.config.js
+site/tailwind.config.cjs
+site/tsconfig.json
