@@ -3,6 +3,6 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := rtos_task
+PROJECT_NAME := final_project
 
 include $(IDF_PATH)/make/project.mk

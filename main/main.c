@@ -27,6 +27,7 @@
 #include "mdns.h"
 #include "esp_http_server.h"
 #include "connect.h"
+#include "resetBtn.h"
 
 #define TAG "FONT"
 SemaphoreHandle_t connect_sem;
@@ -254,9 +255,8 @@ void server_task(void *param)
 void app_main(void)
 {
 	connect_sem = xSemaphoreCreateBinary();
-
 	i2c_lm75_init();
-
+	init_btn();
 	xTaskCreate(DisplayTask, "ILI9341", 1024 * 3, NULL, 4, NULL);
 	xTaskCreate(ledStripTask, "ws2812", 1024 * 2, NULL, 0, NULL);
 	xTaskCreate(makeJson, "makeJson", 1024 * 2, NULL, 2, NULL);
