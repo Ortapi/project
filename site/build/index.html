@@ -6,11 +6,11 @@
 		<link rel="icon" href="./favicon.png" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta http-equiv="content-security-policy" content="">
-	<link rel="stylesheet" href="/_app/assets/pages/__layout.svelte-c1f4fccc.css">
-	<link rel="modulepreload" href="/_app/start-6fc378c2.js">
-	<link rel="modulepreload" href="/_app/chunks/index-81234dc8.js">
-	<link rel="modulepreload" href="/_app/pages/__layout.svelte-47704682.js">
-	<link rel="modulepreload" href="/_app/pages/index.svelte-95c32cb5.js">
+	<link rel="stylesheet" href="/_app/assets/pages/__layout.svelte-b5815e6b.css">
+	<link rel="modulepreload" href="/_app/start-a869a1d6.js">
+	<link rel="modulepreload" href="/_app/chunks/index-1bbfa128.js">
+	<link rel="modulepreload" href="/_app/pages/__layout.svelte-4d23f59e.js">
+	<link rel="modulepreload" href="/_app/pages/index.svelte-a41560ad.js">
 	</head>
 	<body>
 		<div>
@@ -21,20 +21,29 @@
   <li><a href="./ap-to-sta"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg></a></li></ul>
   <div class="bg-indigo-300 object-cover flex-col p-8 text-center "><h1 class="text-xl">Or Tapiero Final Project</h1></div>
 
-<div class="bg-indigo-300 object-cover flex-col p-8 text-center "><h2>TIME:</h2>
-    <h2 class="font-mono text-6xl"><span style="waiting for connection">waiting for connection</span></h2></div>
 
-<div class="bg-indigo-300 object-cover flex-col p-8 text-center "><h2>TEMPERATURE:</h2>
-  <h2 class="font-mono text-6xl"><span style="waiting for connection">waiting for connection</span></h2></div>
+<div class="bg-indigo-300 object-cover flex-col p-8 text-center "><h2>TIME:</h2>
+  
+    <p>Loading...</p>
+  </div>
+
+  <div class="bg-indigo-300 object-cover flex-col p-8 text-center "><h2>Temperature:</h2>
+    
+      <p>Loading...</p>
+    </div>
+
+
 
 <div class="bg-indigo-300 object-cover flex-col p-8 text-center "><h2>Switch On/Off:</h2>
-    <input type="checkbox" class="toggle toggle-lg" unchecked></div>
+    <input type="checkbox" class="toggle toggle-lg" unchecked>
+
+    </div>
 
 
-		<script type="module" data-hydrate="pmo374">
-		import { start } from "/_app/start-6fc378c2.js";
+		<script type="module" data-hydrate="rh317e">
+		import { start } from "/_app/start-a869a1d6.js";
 		start({
-			target: document.querySelector('[data-hydrate="pmo374"]').parentNode,
+			target: document.querySelector('[data-hydrate="rh317e"]').parentNode,
 			paths: {"base":"","assets":""},
 			session: {},
 			route: true,
@@ -44,8 +53,8 @@
 				status: 200,
 				error: null,
 				nodes: [
-					import("/_app/pages/__layout.svelte-47704682.js"),
-						import("/_app/pages/index.svelte-95c32cb5.js")
+					import("/_app/pages/__layout.svelte-4d23f59e.js"),
+						import("/_app/pages/index.svelte-a41560ad.js")
 				],
 				params: {},
 				routeId: ""

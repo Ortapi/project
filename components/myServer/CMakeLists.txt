@@ -3,7 +3,6 @@ idf_component_register(SRCS
                         "connect.c"
                         "ntp_time.c"
                         "toggleLed.c"
-                       
                         
                         INCLUDE_DIRS "."
 
@@ -12,4 +11,6 @@ idf_component_register(SRCS
                         REQUIRES mdns
                         REQUIRES json
                         REQUIRES spiffs
+                        REQUIRES LM75
+                        REQUIRES floatstring
 )

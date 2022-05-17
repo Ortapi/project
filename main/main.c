@@ -204,40 +204,46 @@ void ledStripTask(void *params)
 	}
 }
 
+//char *proj_data;
+// static void makeJson(void *param)
+// {
+// 	char temp_conv[4];
+// 	float temp_raw;
+// 	char *time_str_temp;
 
+// 	// printf("temperature: %f \n" ,temp_raw );
+// 	// printf("temperature string: %s \n" ,temp_conv );
 
-static void makeJson(void *param)
-{
+// 	xSemaphoreTake(connect_sem, portMAX_DELAY);
+// 	is_connected = true;
+// 	while (true)
+// 	{
+// 		time_str_temp = print_time_str();
+// 		temp_raw = readTemperature();
+// 		////convert float to string
+// 		ftoa(temp_raw, temp_conv, 3);
+// 		cJSON *json_array = cJSON_CreateArray();
+// 		cJSON *payload = cJSON_CreateObject();
+// 		// char *time_str_temp = print_time_str();
+// 		cJSON_AddStringToObject(payload, "temperature_str", temp_conv);
+// 		cJSON_AddStringToObject(payload, "time_str", time_str_temp);
+// 		cJSON_AddItemToArray(json_array, payload);
+// 		//char *message = cJSON_Print(payload);
+// 		proj_data = cJSON_Print(payload);
+// 		printf("ws message inside task:\n %s\n", proj_data);
+// 		// send_ws_message(proj_data);
+// 		cJSON_Delete(payload);
+// 		//free(proj_data);
 
-	char temp_conv[4];
-	float temp_raw;
-	char *time_str_temp;
+// 		// printf("ws message inside task:\n %s\n", message);
+// 		// send_ws_message(message);
+// 		// cJSON_Delete(payload);
+// 		// free(message);
+// 		// printf("makeJson test: %s \n", temp_conv )
 
-	// printf("temperature: %f \n" ,temp_raw );
-	// printf("temperature string: %s \n" ,temp_conv );
-
-	xSemaphoreTake(connect_sem, portMAX_DELAY);
-	is_connected = true;
-	while (true)
-	{
-		time_str_temp = print_time_str();
-		temp_raw = readTemperature();
-		////convert float to string
-		ftoa(temp_raw, temp_conv, 3);
-		cJSON *payload = cJSON_CreateObject();
-		// char *time_str_temp = print_time_str();
-		cJSON_AddStringToObject(payload, "temperature_str", temp_conv);
-		cJSON_AddStringToObject(payload, "time_str", time_str_temp);
-		char *message = cJSON_Print(payload);
-		printf("ws message inside task:\n %s\n", message);
-		send_ws_message(message);
-		cJSON_Delete(payload);
-		free(message);
-		// printf("makeJson test: %s \n", temp_conv )
-
-		vTaskDelay(1000 * 10 / portTICK_PERIOD_MS);
-	}
-}
+// 		vTaskDelay(1000 * 10 / portTICK_PERIOD_MS);
+// 	}
+// }
 
 void server_task(void *param)
 {
@@ -254,11 +260,11 @@ void server_task(void *param)
 
 void app_main(void)
 {
-	connect_sem = xSemaphoreCreateBinary();
+	//connect_sem = xSemaphoreCreateBinary();
 	i2c_lm75_init();
 	init_btn();
 	xTaskCreate(DisplayTask, "ILI9341", 1024 * 3, NULL, 4, NULL);
 	xTaskCreate(ledStripTask, "ws2812", 1024 * 2, NULL, 0, NULL);
-	xTaskCreate(makeJson, "makeJson", 1024 * 2, NULL, 2, NULL);
+	//xTaskCreate(makeJson, "makeJson", 1024 * 2, NULL, 2, NULL);
 	xTaskCreatePinnedToCore(server_task, "server task", 1024 * 5, NULL, 5, NULL, 0);
 }
