@@ -13,4 +13,5 @@ idf_component_register(SRCS
                         REQUIRES spiffs
                         REQUIRES LM75
                         REQUIRES floatstring
+                        REQUIRES sendmqtt
 )

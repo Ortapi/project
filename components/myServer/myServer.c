@@ -208,6 +208,7 @@ void connect_to_ap(void *params)
   ap_config_t *ap_config = (ap_config_t *)params;
   wifi_disconnect();
   wifi_destroy_netif();
+  
 
   esp_err_t err = wifi_connect_sta(ap_config->ssid, ap_config->password, 10000);
 
@@ -221,7 +222,6 @@ void connect_to_ap(void *params)
       sntp_init();
       sntp_set_time_sync_notification_cb(on_got_time);
       print_time_str();
-
   }
   else
   {
@@ -345,6 +345,7 @@ void init_server()
       .method = HTTP_GET,
       .handler = on_default_url};
   httpd_register_uri_handler(server, &default_url);
+  
 }
 
 void start_mdns_service()
@@ -366,46 +367,4 @@ void start_mdns_service()
   
 //   start_mdns_service();
 //   init_server();
-// }
-
-// static void show_time_task(void *params)
-// {
-//   xSemaphoreTake(connect_sem, portMAX_DELAY);
-
-//   while (true)
-//   {
-//     cJSON *payload = cJSON_CreateObject();
-
-//     char *time_str_temp = print_time_str();
-//     cJSON_AddStringToObject(payload, "time_str", time_str_temp);
-
-//     char *message = cJSON_Print(payload);
-//     printf("ws message inside task:\n %s\n", message);
-//     send_ws_message(message);
-//     cJSON_Delete(payload);
-//     free(message);
-//     printf("time string test: %s \n", print_time_str() );
-//     vTaskDelay(pdMS_TO_TICKS(1000*60));
-//   }
-// }
-
-
-// void app_main(void)
-// {
-//   connect_sem = xSemaphoreCreateBinary();
-  
-//   ESP_ERROR_CHECK(nvs_flash_init());
-//   init_led();
-
-//   //init_btn();
-//   wifi_init();
-//   //ESP_ERROR_CHECK(wifi_connect_sta(WIFI_STA_SSID, WIFI_STA_PASS, 10000));
-//   wifi_connect_ap("esp32ap", "password");
-  
-//   start_mdns_service();
-//   init_server();
-
-  
-
-//   xTaskCreate(show_time_task, "show time task", 2024, NULL, 5, NULL);
 // }

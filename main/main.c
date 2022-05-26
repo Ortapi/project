@@ -13,7 +13,7 @@
 #include "driver/i2c.h"
 #include "lm75.h"
 #include "floatstring.h"
-#include "protocol_examples_common.h"
+//#include "protocol_examples_common.h"
 #include "nvs_flash.h"
 #include <time.h>
 #include "esp_sntp.h"
@@ -28,9 +28,15 @@
 #include "esp_http_server.h"
 #include "connect.h"
 #include "resetBtn.h"
+#include "sendmqtt.h"
+
 
 #define TAG "FONT"
 SemaphoreHandle_t connect_sem;
+SemaphoreHandle_t connectionSemaphore;
+
+extern TaskHandle_t MQTTtaskHandle;
+
 bool is_connected = false;
 
 void ArrowTest(TFT_t *dev, FontxFile *fx, char *str, int row)
@@ -204,7 +210,7 @@ void ledStripTask(void *params)
 	}
 }
 
-//char *proj_data;
+// char *proj_data;
 // static void makeJson(void *param)
 // {
 // 	char temp_conv[4];
@@ -240,7 +246,6 @@ void ledStripTask(void *params)
 // 		// cJSON_Delete(payload);
 // 		// free(message);
 // 		// printf("makeJson test: %s \n", temp_conv )
-
 // 		vTaskDelay(1000 * 10 / portTICK_PERIOD_MS);
 // 	}
 // }
@@ -254,17 +259,34 @@ void server_task(void *param)
 	wifi_connect_ap("esp32ap", "password");
 	start_mdns_service();
 	init_server();
-
+	
 	vTaskDelete(NULL);
 }
 
+
+
+void MQTT_task(void *param)
+{
+	//xSemaphoreTake(connectionSemaphore, portMAX_DELAY);
+	while(true)
+	{
+		char *time_str = print_time_str();
+		MQTTLogic(time_str);
+		vTaskDelay(1000 * 10 / portTICK_PERIOD_MS);
+	}
+}
+
+
 void app_main(void)
 {
-	//connect_sem = xSemaphoreCreateBinary();
+	connectionSemaphore = xSemaphoreCreateBinary();
+	connect_sem = xSemaphoreCreateBinary();
 	i2c_lm75_init();
 	init_btn();
+	
 	xTaskCreate(DisplayTask, "ILI9341", 1024 * 3, NULL, 4, NULL);
 	xTaskCreate(ledStripTask, "ws2812", 1024 * 2, NULL, 0, NULL);
 	//xTaskCreate(makeJson, "makeJson", 1024 * 2, NULL, 2, NULL);
 	xTaskCreatePinnedToCore(server_task, "server task", 1024 * 5, NULL, 5, NULL, 0);
+	xTaskCreate(MQTT_task, "MQTT_task", 1024 * 3, NULL, 3, &MQTTtaskHandle);
 }
