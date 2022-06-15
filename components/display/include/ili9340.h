@@ -20,13 +20,13 @@
 #define DIRECTION180	2
 #define DIRECTION270	3
 
-#define CONF_GPIO_MOSI 12
-#define CONF_GPIO_SCLK 14
-#define CONF_TFT_CS 15
-#define CONF_GPIO_DC 2
+#define CONF_GPIO_MOSI 	12
+#define CONF_GPIO_SCLK 	14
+#define CONF_TFT_CS 	15
+#define CONF_GPIO_DC 	2
 #define CONF_GPIO_RESET 4
-#define CONF_GPIO_BL 21
-#define CONF_TFT_WIDTH 240
+#define CONF_GPIO_BL 	21
+#define CONF_TFT_WIDTH 	240
 #define CONF_TFT_HEIGHT 320
 
 

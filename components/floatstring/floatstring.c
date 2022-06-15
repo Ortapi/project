@@ -37,7 +37,7 @@ int intToStr(int x, char str[], int d)
 }
   
 // Converts a floating-point/double number to a string.
-void ftoa(float n, char* res, int afterpoint)
+void floatToString(float n, char* res, int afterpoint)
 {
     // Extract integer part
     int ipart = (int)n;

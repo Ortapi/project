@@ -19,6 +19,7 @@
 TaskHandle_t MQTTtaskHandle;
 extern SemaphoreHandle_t connectionSemaphore;
 
+//HIVEMQ MQTT cloude server cerificate
 extern const uint8_t isrgrootx1[] asm("_binary_isrgrootx1_pem_start");
 
 
@@ -26,7 +27,8 @@ static const int WIFI_CONNECTED = BIT0;
 static const int MQTT_CONNECTED = BIT1;
 static const int MQTT_PUBLISHED = BIT2;
 
-
+// mqtt handler call back function
+// uses as a state machine 
 void mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
 {
   switch (event->event_id)

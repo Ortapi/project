@@ -39,7 +39,7 @@ extern TaskHandle_t MQTTtaskHandle;
 
 bool is_connected = false;
 
-void ArrowTest(TFT_t *dev, FontxFile *fx, char *str, int row)
+void printStrScreen(TFT_t *dev, FontxFile *fx, char *str, int row)
 {
 	uint16_t row_y;
 	switch (row)
@@ -100,22 +100,39 @@ void DisplayTask(void *params)
       .format_if_mount_failed = true};
 
 	// Use settings defined above toinitialize and mount SPIFFS filesystem.
-	// Note: esp_vfs_spiffs_register is anall-in-one convenience function.
+	// Note: esp_vfs_spiffs_register is an all-in-one convenience function.
 	esp_err_t ret = esp_vfs_spiffs_register(&spiffs_font_conf);
 	
+	//init font file from SPIFFS partition
 	FontxFile fx32L[2];
 	InitFontx(fx32L, "/font/LATIN32B.FNT", ""); // 16x32Dot Latinc
 	TFT_t dev;
 
+	//define unused pins as -1
 	int GPIO_MISO = -1;
 	int XPT_CS = -1;
 	int XPT_IRQ = -1;
-	spi_master_init(&dev, (int16_t)CONF_GPIO_MOSI, (int16_t)CONF_GPIO_SCLK, (int16_t)CONF_TFT_CS, (int16_t)CONF_GPIO_DC, (int16_t)CONF_GPIO_RESET, (int16_t)CONF_GPIO_BL,
-					(int16_t)GPIO_MISO, (int16_t)XPT_CS, (int16_t)XPT_IRQ);
+
+	//spi init for desire pins
+	spi_master_init(&dev,
+					(int16_t)CONF_GPIO_MOSI,
+					(int16_t)CONF_GPIO_SCLK,
+					(int16_t)CONF_TFT_CS,
+					(int16_t)CONF_GPIO_DC,
+					(int16_t)CONF_GPIO_RESET,
+					(int16_t)CONF_GPIO_BL,
+					(int16_t)GPIO_MISO,
+					(int16_t)XPT_CS,
+					(int16_t)XPT_IRQ
+					);
 
 	lcdInit(&dev, (uint16_t)0x9341, CONF_TFT_WIDTH, CONF_TFT_HEIGHT, 0, 0);
 	// lcdFillScreen(&dev, (uint16_t)0x6fa8dc);
+	//// END OF HARDWARE CONFIG AND DEFINES /////
 
+	/// START CONFIG WRITTEN TEXT ON SCREEN ///
+
+	// FIRST FIXED POSITION HEADERS ////
 	char *temperature_title = "Temperature:";
 	char *time_title = "Time:";
 	char temp_conv[5];
@@ -126,26 +143,25 @@ void DisplayTask(void *params)
 	lcdFillScreen(&dev, WHITE);
 	lcdUnsetFontUnderLine(&dev);
 	lcdSetFontFill(&dev, WHITE);
-	ArrowTest(&dev, fx32L, temperature_title, 3);
-	ArrowTest(&dev, fx32L, time_title, 7);
+	printStrScreen(&dev, fx32L, temperature_title, 3);
+	printStrScreen(&dev, fx32L, time_title, 7);
 
 	while (1)
 	{
-		
 		temp_raw = readTemperature();
-		ftoa(temp_raw, temp_conv, 3);
-		ArrowTest(&dev, fx32L, temp_conv, 5);
+		floatToString(temp_raw, temp_conv, 3);
+		printStrScreen(&dev, fx32L, temp_conv, 5);
 		if (is_connected == true)
 		{
 			time_str_temp = print_time_str();
-			ArrowTest(&dev, fx32L, time_str_temp, 9);
+			printStrScreen(&dev, fx32L, time_str_temp, 9);
 		}
 		else
 		{
 			time_str_temp = "waiting";
-			ArrowTest(&dev, fx32L, time_str_temp, 9);
+			printStrScreen(&dev, fx32L, time_str_temp, 9);
 		}
-		
+		/// 5ms delay every screen write for temperature and NTP time
 		vTaskDelay(5000 / portTICK_PERIOD_MS);
 	}
 }
@@ -227,7 +243,7 @@ void ledStripTask(void *params)
 // 		time_str_temp = print_time_str();
 // 		temp_raw = readTemperature();
 // 		////convert float to string
-// 		ftoa(temp_raw, temp_conv, 3);
+// 		floatToString(temp_raw, temp_conv, 3);
 // 		cJSON *json_array = cJSON_CreateArray();
 // 		cJSON *payload = cJSON_CreateObject();
 // 		// char *time_str_temp = print_time_str();
@@ -284,7 +300,7 @@ void app_main(void)
 	i2c_lm75_init();
 	init_btn();
 	
-	xTaskCreate(DisplayTask, "ILI9341", 1024 * 3, NULL, 4, NULL);
+	xTaskCreate(DisplayTask, "ILI9340", 1024 * 3, NULL, 4, NULL);
 	xTaskCreate(ledStripTask, "ws2812", 1024 * 2, NULL, 0, NULL);
 	//xTaskCreate(makeJson, "makeJson", 1024 * 2, NULL, 2, NULL);
 	xTaskCreatePinnedToCore(server_task, "server task", 1024 * 5, NULL, 5, NULL, 0);
