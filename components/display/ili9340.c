@@ -41,8 +41,16 @@ static const int XPT_Frequency = 1*1000*1000;
 //#define XPT_IRQ 5
 #endif
 
-void spi_master_init(TFT_t * dev, int16_t GPIO_MOSI, int16_t GPIO_SCLK, int16_t TFT_CS, int16_t GPIO_DC, int16_t GPIO_RESET, int16_t GPIO_BL,
-	int16_t GPIO_MISO, int16_t XPT_CS, int16_t XPT_IRQ)
+void spi_master_init(TFT_t * dev,
+ int16_t GPIO_MOSI,
+ int16_t GPIO_SCLK,
+ int16_t TFT_CS,
+ int16_t GPIO_DC,
+ int16_t GPIO_RESET,
+ int16_t GPIO_BL,
+ int16_t GPIO_MISO,
+ int16_t XPT_CS,
+ int16_t XPT_IRQ)
 {
 	esp_err_t ret;
 

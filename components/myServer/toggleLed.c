@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include "driver/gpio.h"
 
-#define LED 5
+#define LED 27
 
 void init_led(void)
 {

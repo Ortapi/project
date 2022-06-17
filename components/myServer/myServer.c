@@ -135,7 +135,7 @@ static esp_err_t on_proj_data_url(httpd_req_t *req)
 
     temp_raw = readTemperature();
     // convert float to string
-    ftoa(temp_raw, temp_conv, 3);
+    floatToString(temp_raw, temp_conv, 3);
 
   cJSON_AddStringToObject(payload, "temperature_str", temp_conv);
   cJSON_AddStringToObject(payload, "time_str", time_str_temp);

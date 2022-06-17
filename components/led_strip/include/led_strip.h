@@ -20,7 +20,7 @@ extern "C" {
 #include "esp_err.h"
 
 #define RMT_TX_CHANNEL RMT_CHANNEL_0
-#define LED_STRIP_GPIO 18
+#define LED_STRIP_GPIO 26
 #define LED_NUM 12
     
     /**

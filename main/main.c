@@ -30,10 +30,10 @@
 #include "resetBtn.h"
 #include "sendmqtt.h"
 
-
 #define TAG "FONT"
-SemaphoreHandle_t connect_sem;
-SemaphoreHandle_t connectionSemaphore;
+#define TAG_SYSTEM "SYSTEM TEST"
+//SemaphoreHandle_t connect_sem;
+//SemaphoreHandle_t connectionSemaphore;
 
 extern TaskHandle_t MQTTtaskHandle;
 
@@ -112,7 +112,8 @@ void DisplayTask(void *params)
 	int GPIO_MISO = -1;
 	int XPT_CS = -1;
 	int XPT_IRQ = -1;
-
+	int CONF_GPIO_BL = -1;
+	int CONF_GPIO_RESET = -1;
 	//spi init for desire pins
 	spi_master_init(&dev,
 					(int16_t)CONF_GPIO_MOSI,
@@ -153,6 +154,7 @@ void DisplayTask(void *params)
 		printStrScreen(&dev, fx32L, temp_conv, 5);
 		if (is_connected == true)
 		{
+			printStrScreen(&dev, fx32L, "       ", 9);
 			time_str_temp = print_time_str();
 			printStrScreen(&dev, fx32L, time_str_temp, 9);
 		}
@@ -210,19 +212,16 @@ void ledStripTask(void *params)
 		// hue = (decoded_temp) * 360 / LED_NUM;
 		hue = decoded_temp;
 		// printf("decoded_temp %d \n", (int)decoded_temp);
-		led_strip_hsv2rgb(hue, 100, 50, &red, &green, &blue);
-
+		led_strip_hsv2rgb(hue, 100, 20, &red, &green, &blue);
 		for (int j = 0; j < LED_NUM; j++)
 		{
 			// Write RGB values to strip driver
 			ESP_ERROR_CHECK(strip->set_pixel(strip, j, red, green, blue));
-			vTaskDelay(100 / portTICK_PERIOD_MS);
+			vTaskDelay(50 / portTICK_PERIOD_MS);
 			ESP_ERROR_CHECK(strip->refresh(strip, 100));
 		}
 		// Flush RGB values to LEDs
-
-		vTaskDelay(5000 / portTICK_PERIOD_MS);
-
+		vTaskDelay(1000 * 5 / portTICK_PERIOD_MS);
 	}
 }
 
@@ -283,11 +282,15 @@ void server_task(void *param)
 
 void MQTT_task(void *param)
 {
-	//xSemaphoreTake(connectionSemaphore, portMAX_DELAY);
+
+	MQTT_app_start();
 	while(true)
 	{
-		char *time_str = print_time_str();
-		MQTTLogic(time_str);
+		//char *time_str = print_time_str();
+		//MQTTLogic(time_str);
+		// send_mqtt_cmd(&MQTTtaskHandle);
+		ESP_LOGI(TAG_SYSTEM, "mqtt task test");
+		//xTaskNotify(MQTTtaskHandle, 8, eSetValueWithOverwrite);
 		vTaskDelay(1000 * 10 / portTICK_PERIOD_MS);
 	}
 }
@@ -295,14 +298,14 @@ void MQTT_task(void *param)
 
 void app_main(void)
 {
-	connectionSemaphore = xSemaphoreCreateBinary();
-	connect_sem = xSemaphoreCreateBinary();
+	//connectionSemaphore = xSemaphoreCreateBinary();
+	//connect_sem = xSemaphoreCreateBinary();
 	i2c_lm75_init();
-	init_btn();
+	//init_btn();
 	
-	xTaskCreate(DisplayTask, "ILI9340", 1024 * 3, NULL, 4, NULL);
+	xTaskCreate(DisplayTask, "ILI9340", 1024 * 3, NULL, 0, NULL);
 	xTaskCreate(ledStripTask, "ws2812", 1024 * 2, NULL, 0, NULL);
 	//xTaskCreate(makeJson, "makeJson", 1024 * 2, NULL, 2, NULL);
 	xTaskCreatePinnedToCore(server_task, "server task", 1024 * 5, NULL, 5, NULL, 0);
-	xTaskCreate(MQTT_task, "MQTT_task", 1024 * 3, NULL, 3, &MQTTtaskHandle);
+	//xTaskCreate(MQTT_task, "MQTT_task", 1024 * 3, NULL, 0, &MQTTtaskHandle);
 }
