@@ -11,7 +11,7 @@
 
 const static char *TAG = "WIFI";
 esp_netif_t *esp_netif;
-//extern SemaphoreHandle_t connectionSemaphore;
+extern SemaphoreHandle_t connectionSemaphore;
 extern TaskHandle_t MQTTtaskHandle;
 
 static EventGroupHandle_t wifi_events;
@@ -129,8 +129,8 @@ void event_handler(void *event_handler_arg, esp_event_base_t event_base, int32_t
     case IP_EVENT_STA_GOT_IP: 
         ESP_LOGI(TAG, "GOT IP");
         xEventGroupSetBits(wifi_events, CONNECTED_GOT_IP);
-        xTaskNotify(MQTTtaskHandle, CONNECTED_GOT_IP, eSetValueWithOverwrite);
-        //xSemaphoreGive(connectionSemaphore);
+        //xTaskNotify(MQTTtaskHandle, CONNECTED_GOT_IP, eSetValueWithOverwrite);
+        xSemaphoreGive(connectionSemaphore);
         break;
     case WIFI_EVENT_AP_START:
         ESP_LOGI(TAG, "AP started");

@@ -20,15 +20,17 @@
 #define TAG "MQTT"
 
 TaskHandle_t MQTTtaskHandle;
+
+esp_mqtt_client_handle_t client = NULL;
 // extern SemaphoreHandle_t connectionSemaphore;
 
 //HIVEMQ MQTT cloude server cerificate
 extern const uint8_t isrgrootx1[] asm("_binary_isrgrootx1_pem_start");
 
 
-static const int WIFI_CONNECTED     = BIT0;
-static const int MQTT_CONNECTED     = BIT1;
-static const int MQTT_PUBLISHED     = BIT2;
+// static const int WIFI_CONNECTED = BIT0;
+// static const int MQTT_CONNECTED = BIT1;
+// static const int MQTT_PUBLISHED = BIT2;
 
 // static const int MQTT_SEND          = BIT3;
 
@@ -40,7 +42,8 @@ void mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
   {
   case MQTT_EVENT_CONNECTED:
     ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
-    xTaskNotify(MQTTtaskHandle, MQTT_CONNECTED, eSetValueWithOverwrite);
+    esp_mqtt_client_subscribe(client, MQTT_CLIENT_SUBSCRIBE, 2);
+    //xTaskNotify(MQTTtaskHandle, MQTT_CONNECTED, eSetValueWithOverwrite);
     break;
   case MQTT_EVENT_DISCONNECTED:
     ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");
@@ -53,7 +56,7 @@ void mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
     break;
   case MQTT_EVENT_PUBLISHED:
     ESP_LOGI(TAG, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
-    xTaskNotify(MQTTtaskHandle, MQTT_PUBLISHED, eSetValueWithOverwrite);
+    //xTaskNotify(MQTTtaskHandle, MQTT_PUBLISHED, eSetValueWithOverwrite);
     break;
   case MQTT_EVENT_DATA:
     ESP_LOGI(TAG, "MQTT_EVENT_DATA");
@@ -74,63 +77,73 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
   mqtt_event_handler_cb(event_data);
 }
 
-// void MQTT_app_start(void)
-// {
-  
-//   esp_mqtt_client_config_t mqttConfig = {
-//     .uri = MQTT_BROKER_URI,
-//     .client_id = MQTT_CLIENT_ID,
-//     .username = MQTT_USERNAME,
-//     .password = MQTT_PASSWORD,
-//     .cert_pem = (char *)isrgrootx1
-//     };
-//   esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqttConfig);
-//   esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, client);
-  
-// }
-
-
 void MQTT_app_start(void)
 {
-
-    esp_mqtt_client_config_t mqttConfig = {
+  
+  esp_mqtt_client_config_t mqttConfig = {
     .uri = MQTT_BROKER_URI,
     .client_id = MQTT_CLIENT_ID,
     .username = MQTT_USERNAME,
     .password = MQTT_PASSWORD,
     .cert_pem = (char *)isrgrootx1
     };
-
-    esp_mqtt_client_handle_t client = NULL;
-    
-    uint32_t command = 0;
-    while (true)
-    {
-      xTaskNotifyWait(0, 0, &command, portMAX_DELAY);
-      switch (command)
-      {
-      case WIFI_CONNECTED:
-      client = esp_mqtt_client_init(&mqttConfig);
-      esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, client);
-      esp_mqtt_client_start(client);
-        break;
-      case MQTT_CONNECTED:
-        esp_mqtt_client_subscribe(client, MQTT_CLIENT_SUBSCRIBE, 2);
-        char data[50];
-        sprintf(data, "%s", "esp32 mqtt temperature test");
-        printf("sending data: %s", data);
-        esp_mqtt_client_publish(client, MQTT_CLIENT_PUBLISH, data, strlen(data), 2, false);
-        break;
-      case MQTT_PUBLISHED:
-        // esp_mqtt_client_stop(client);
-        // esp_mqtt_client_destroy(client);
-        // esp_wifi_stop();
-        return;
-      default:
-        break;
-      }
-  }
+  client = esp_mqtt_client_init(&mqttConfig);
+  esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, client);
+  esp_mqtt_client_start(client);
 }
+
+void MQTT_send_data(void)
+{
+  char temp_conv[4];
+	float temp_raw;
+	// char *time_str_temp;
+  // time_str_temp = print_time_str();
+	temp_raw = readTemperature();
+	//convert float to string
+	floatToString(temp_raw, temp_conv, 3);
+  esp_mqtt_client_publish(client, MQTT_CLIENT_PUBLISH, temp_conv, strlen(temp_conv), 2, false);
+}
+
+
+// static void MQTT_cmd(void)
+// {
+
+//     // esp_mqtt_client_config_t mqttConfig = {
+//     // .uri = MQTT_BROKER_URI,
+//     // .client_id = MQTT_CLIENT_ID,
+//     // .username = MQTT_USERNAME,
+//     // .password = MQTT_PASSWORD,
+//     // .cert_pem = (char *)isrgrootx1
+//     // };
+
+//     //esp_mqtt_client_handle_t client = NULL;
+    
+//     uint32_t command = 0;
+//     // while (true)
+//     // {
+//       xTaskNotifyWait(0, 0, &command, portMAX_DELAY);
+//       switch (command)
+//       {
+//       case WIFI_CONNECTED:
+      
+//         break;
+//       case MQTT_CONNECTED:
+//         esp_mqtt_client_subscribe(client, MQTT_CLIENT_SUBSCRIBE, 2);
+//         char data[50];
+//         sprintf(data, "%s", "esp32 mqtt temperature test");
+//         printf("sending data: %s", data);
+//         // esp_mqtt_client_publish(client, MQTT_CLIENT_PUBLISH, data, strlen(data), 2, false);
+//         break;
+//       case MQTT_PUBLISHED:
+//         // esp_mqtt_client_stop(client);
+//         // esp_mqtt_client_destroy(client);
+//         // esp_wifi_stop();
+//         return;
+//       default:
+//         break;
+//       }
+//   // }
+// }
 
 // void OnConnected(void *para)
 // {

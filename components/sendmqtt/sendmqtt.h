@@ -9,10 +9,8 @@
 #define MQTT_PASSWORD       "Or!15759363"
 
 
-// void mqtt_init();
-// void MQTTLogic(char *sensorReading);
-// void OnConnected();
 void MQTT_app_start(void);
-// void send_mqtt_cmd(void *param);
+
+void MQTT_send_data(void);
 
 #endif

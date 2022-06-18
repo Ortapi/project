@@ -33,7 +33,7 @@
 #define TAG "FONT"
 #define TAG_SYSTEM "SYSTEM TEST"
 //SemaphoreHandle_t connect_sem;
-//SemaphoreHandle_t connectionSemaphore;
+SemaphoreHandle_t connectionSemaphore;
 
 extern TaskHandle_t MQTTtaskHandle;
 
@@ -282,15 +282,13 @@ void server_task(void *param)
 
 void MQTT_task(void *param)
 {
-
+	xSemaphoreTake(connectionSemaphore, portMAX_DELAY);
 	MQTT_app_start();
 	while(true)
 	{
-		//char *time_str = print_time_str();
-		//MQTTLogic(time_str);
-		// send_mqtt_cmd(&MQTTtaskHandle);
+		
 		ESP_LOGI(TAG_SYSTEM, "mqtt task test");
-		//xTaskNotify(MQTTtaskHandle, 8, eSetValueWithOverwrite);
+		MQTT_send_data();
 		vTaskDelay(1000 * 10 / portTICK_PERIOD_MS);
 	}
 }
@@ -298,14 +296,14 @@ void MQTT_task(void *param)
 
 void app_main(void)
 {
-	//connectionSemaphore = xSemaphoreCreateBinary();
+	connectionSemaphore = xSemaphoreCreateBinary();
 	//connect_sem = xSemaphoreCreateBinary();
 	i2c_lm75_init();
-	//init_btn();
+	init_btn();
 	
 	xTaskCreate(DisplayTask, "ILI9340", 1024 * 3, NULL, 0, NULL);
 	xTaskCreate(ledStripTask, "ws2812", 1024 * 2, NULL, 0, NULL);
 	//xTaskCreate(makeJson, "makeJson", 1024 * 2, NULL, 2, NULL);
 	xTaskCreatePinnedToCore(server_task, "server task", 1024 * 5, NULL, 5, NULL, 0);
-	//xTaskCreate(MQTT_task, "MQTT_task", 1024 * 3, NULL, 0, &MQTTtaskHandle);
+	xTaskCreate(MQTT_task, "MQTT_task", 1024 * 3, NULL, 0, &MQTTtaskHandle);
 }
