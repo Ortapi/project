@@ -12,5 +12,6 @@
 void MQTT_app_start(void);
 
 void MQTT_send_data(void);
+void mqtt_check_bool(char *str, int size);
 
 #endif

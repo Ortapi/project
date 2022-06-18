@@ -16,6 +16,7 @@
 #include "toggleLed.h"
 #include "floatstring.h"
 #include "lm75.h"
+#include "ntp_time.h"
 
 #define TAG "MQTT"
 
@@ -62,6 +63,9 @@ void mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
     ESP_LOGI(TAG, "MQTT_EVENT_DATA");
     printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
     printf("DATA=%.*s\r\n", event->data_len, event->data);
+    // char *data_mqtt;
+    // data_mqtt = event->data;
+    mqtt_check_bool(event->data, event->data_len);
     break;
   case MQTT_EVENT_ERROR:
     ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
@@ -94,76 +98,66 @@ void MQTT_app_start(void)
 
 void MQTT_send_data(void)
 {
+  char *proj_data;
   char temp_conv[4];
 	float temp_raw;
-	// char *time_str_temp;
-  // time_str_temp = print_time_str();
-	temp_raw = readTemperature();
-	//convert float to string
-	floatToString(temp_raw, temp_conv, 3);
-  esp_mqtt_client_publish(client, MQTT_CLIENT_PUBLISH, temp_conv, strlen(temp_conv), 2, false);
+	char *time_str_temp;
+  time_str_temp = print_time_str();
+		temp_raw = readTemperature();
+		////convert float to string
+		floatToString(temp_raw, temp_conv, 3);
+		cJSON *json_array = cJSON_CreateArray();
+		cJSON *payload = cJSON_CreateObject();
+		// char *time_str_temp = print_time_str();
+		cJSON_AddStringToObject(payload, "temperature_str", temp_conv);
+		cJSON_AddStringToObject(payload, "time_str", time_str_temp);
+		cJSON_AddItemToArray(json_array, payload);
+		//char *message = cJSON_Print(payload);
+		proj_data = cJSON_Print(payload);
+		// printf("MQTT_send_data :\n %s\n", proj_data);
+		// send_ws_message(proj_data);
+    esp_mqtt_client_publish(client, MQTT_CLIENT_PUBLISH, proj_data, strlen(proj_data), 2, false);
+		cJSON_Delete(payload);
+		//free(proj_data);
+  
 }
 
+void mqtt_check_bool(char *str, int size){
 
-// static void MQTT_cmd(void)
-// {
+    uint8_t i = 0;
+    // char str_arr = str[0];
+    char str_arr[size];
+    // memset(str_arr, size, sizeof(char));
 
-//     // esp_mqtt_client_config_t mqttConfig = {
-//     // .uri = MQTT_BROKER_URI,
-//     // .client_id = MQTT_CLIENT_ID,
-//     // .username = MQTT_USERNAME,
-//     // .password = MQTT_PASSWORD,
-//     // .cert_pem = (char *)isrgrootx1
-//     // };
+    // int count = 0;
+    if (size == 1)
+    {
+        for (i = 0; i < size; i++)
+        {
+            // count++;
+            str_arr[i] = str[i];
+            // printf("str = %c \n" , str_arr[i]);
+            // printf("count = %d \n" , count);
+        }
 
-//     //esp_mqtt_client_handle_t client = NULL;
+        if (str_arr[0] == '1')
+        {
+          toggle_led(true);
+          ESP_LOGI(TAG, "MQTT relay on");
+        }
+        else if (str_arr[0] == '0')
+        {
+            toggle_led(false);
+            ESP_LOGI(TAG, "MQTT relay off");
+        }
+        else{
+            ESP_LOGI(TAG, "MQTT relay not bool received");
+        }
+    }
+    if (size > 1)
+    {
+        ESP_LOGI(TAG, "MQTT relay bool payload > 1");
+    }
     
-//     uint32_t command = 0;
-//     // while (true)
-//     // {
-//       xTaskNotifyWait(0, 0, &command, portMAX_DELAY);
-//       switch (command)
-//       {
-//       case WIFI_CONNECTED:
-      
-//         break;
-//       case MQTT_CONNECTED:
-//         esp_mqtt_client_subscribe(client, MQTT_CLIENT_SUBSCRIBE, 2);
-//         char data[50];
-//         sprintf(data, "%s", "esp32 mqtt temperature test");
-//         printf("sending data: %s", data);
-//         // esp_mqtt_client_publish(client, MQTT_CLIENT_PUBLISH, data, strlen(data), 2, false);
-//         break;
-//       case MQTT_PUBLISHED:
-//         // esp_mqtt_client_stop(client);
-//         // esp_mqtt_client_destroy(client);
-//         // esp_wifi_stop();
-//         return;
-//       default:
-//         break;
-//       }
-//   // }
-// }
 
-// void OnConnected(void *para)
-// {
-//   while (true)
-//   {
-//     int sensorReading;
-//     if (xQueueReceive(readingQueue, &sensorReading, portMAX_DELAY))
-//     {
-//       ESP_ERROR_CHECK(esp_wifi_start());
-//       MQTTLogic(sensorReading);
-//     }
-//   }
-// }
-
-// void generateReading(void *params)
-// {
-//   while (true)
-//   {
-//     int random = esp_random();
-//     xQueueSend(readingQueue, &random, 2000 / portTICK_PERIOD_MS);
-//     vTaskDelay(15000 / portTICK_PERIOD_MS);
-//   }
-// }
+}

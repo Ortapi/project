@@ -289,7 +289,7 @@ void MQTT_task(void *param)
 		
 		ESP_LOGI(TAG_SYSTEM, "mqtt task test");
 		MQTT_send_data();
-		vTaskDelay(1000 * 10 / portTICK_PERIOD_MS);
+		vTaskDelay(1000 * 60 / portTICK_PERIOD_MS);
 	}
 }
 
