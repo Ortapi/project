@@ -282,13 +282,15 @@ void server_task(void *param)
 
 void MQTT_task(void *param)
 {
+	// will be apply only when wifi connection ok
 	xSemaphoreTake(connectionSemaphore, portMAX_DELAY);
 	MQTT_app_start();
 	while(true)
 	{
-		
-		ESP_LOGI(TAG_SYSTEM, "mqtt task test");
-		MQTT_send_data();
+		// ESP_LOGI(TAG_SYSTEM, "mqtt task test");
+		mqtt_send_time();
+		mqtt_send_temperature();
+
 		vTaskDelay(1000 * 60 / portTICK_PERIOD_MS);
 	}
 }
@@ -305,5 +307,5 @@ void app_main(void)
 	xTaskCreate(ledStripTask, "ws2812", 1024 * 2, NULL, 0, NULL);
 	//xTaskCreate(makeJson, "makeJson", 1024 * 2, NULL, 2, NULL);
 	xTaskCreatePinnedToCore(server_task, "server task", 1024 * 5, NULL, 5, NULL, 0);
-	xTaskCreate(MQTT_task, "MQTT_task", 1024 * 3, NULL, 0, &MQTTtaskHandle);
+	xTaskCreate(MQTT_task, "MQTT_task", 1024 * 2, NULL, 0, &MQTTtaskHandle);
 }

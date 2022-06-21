@@ -83,7 +83,6 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 
 void MQTT_app_start(void)
 {
-  
   esp_mqtt_client_config_t mqttConfig = {
     .uri = MQTT_BROKER_URI,
     .client_id = MQTT_CLIENT_ID,
@@ -96,30 +95,45 @@ void MQTT_app_start(void)
   esp_mqtt_client_start(client);
 }
 
-void MQTT_send_data(void)
-{
-  char *proj_data;
+// void MQTT_send_data(void)
+// {
+//   char *proj_data;
+//   char temp_conv[4];
+// 	float temp_raw;
+// 	char *time_str_temp;
+//   time_str_temp = print_time_str();
+// 		temp_raw = readTemperature();
+// 		////convert float to string
+// 		floatToString(temp_raw, temp_conv, 3);
+// 		cJSON *json_array = cJSON_CreateArray();
+// 		cJSON *payload = cJSON_CreateObject();
+// 		// char *time_str_temp = print_time_str();
+// 		cJSON_AddStringToObject(payload, "temperature_str", temp_conv);
+// 		cJSON_AddStringToObject(payload, "time_str", time_str_temp);
+// 		cJSON_AddItemToArray(json_array, payload);
+// 		//char *message = cJSON_Print(payload);
+// 		proj_data = cJSON_Print(payload);
+// 		// printf("MQTT_send_data :\n %s\n", proj_data);
+// 		// send_ws_message(proj_data);
+//     esp_mqtt_client_publish(client, MQTT_CLIENT_PUBLISH, proj_data, strlen(proj_data), 0, false);
+// 		cJSON_Delete(payload);
+// 		//free(proj_data);
+// }
+
+
+void mqtt_send_time(void){
+  char *time_str_temp;
+  time_str_temp = print_time_str();
+  esp_mqtt_client_publish(client, MQTT_TOPIC_TIME, time_str_temp, strlen(time_str_temp), 0, false);
+}
+
+void mqtt_send_temperature(void){
   char temp_conv[4];
 	float temp_raw;
-	char *time_str_temp;
-  time_str_temp = print_time_str();
-		temp_raw = readTemperature();
-		////convert float to string
-		floatToString(temp_raw, temp_conv, 3);
-		cJSON *json_array = cJSON_CreateArray();
-		cJSON *payload = cJSON_CreateObject();
-		// char *time_str_temp = print_time_str();
-		cJSON_AddStringToObject(payload, "temperature_str", temp_conv);
-		cJSON_AddStringToObject(payload, "time_str", time_str_temp);
-		cJSON_AddItemToArray(json_array, payload);
-		//char *message = cJSON_Print(payload);
-		proj_data = cJSON_Print(payload);
-		// printf("MQTT_send_data :\n %s\n", proj_data);
-		// send_ws_message(proj_data);
-    esp_mqtt_client_publish(client, MQTT_CLIENT_PUBLISH, proj_data, strlen(proj_data), 2, false);
-		cJSON_Delete(payload);
-		//free(proj_data);
-  
+  temp_raw = readTemperature();
+	// convert float to string
+	floatToString(temp_raw, temp_conv, 3);
+  esp_mqtt_client_publish(client, MQTT_TOPIC_TEMPERATURE, temp_conv, 4, 0, false);
 }
 
 void mqtt_check_bool(char *str, int size){
