@@ -34,62 +34,15 @@
 #define TAG_SYSTEM "SYSTEM TEST"
 //SemaphoreHandle_t connect_sem;
 SemaphoreHandle_t connectionSemaphore;
+QueueHandle_t collectDataQueue;
+QueueHandle_t collectDataQueue1;
+QueueHandle_t setTemperatureQueue;
 
-extern TaskHandle_t MQTTtaskHandle;
+// extern TaskHandle_t MQTTtaskHandle;
 
 bool is_connected = false;
 
-void printStrScreen(TFT_t *dev, FontxFile *fx, char *str, int row)
-{
-	uint16_t row_y;
-	switch (row)
-	{
-	case 1:
-		row_y = 24;
-		break;
-	case 2:
-		row_y = 48;
-		break;
-	case 3:
-		row_y = 72;
-		break;
-	case 4:
-		row_y = 96;
-		break;
-	case 5:
-		row_y = 120;
-		break;
-	case 6:
-		row_y = 144;
-		break;
-	case 7:
-		row_y = 168;
-		break;
-	case 8:
-		row_y = 192;
-		break;
-	case 9:
-		row_y = 216;
-		break;
-	default:
-		row_y = 240;
-		break;
-	}
 
-	// get font width & height
-	uint8_t buffer[FontxGlyphBufSize];
-	uint8_t fontWidth;
-	uint8_t fontHeight;
-	GetFontx(fx, 0, buffer, &fontWidth, &fontHeight);
-
-	uint8_t ascii[24];
-
-	uint16_t ypos = ((CONF_TFT_HEIGHT - fontHeight) / 2) - 1;
-	uint16_t xpos = (CONF_TFT_WIDTH - (strlen((char *)ascii) * fontWidth)) / 2;
-
-	strcpy((char *)ascii, str);
-	lcdDrawString(dev, fx, (uint16_t)10, (uint16_t)row_y, ascii, BLACK);
-}
 
 void DisplayTask(void *params)
 {
@@ -136,8 +89,8 @@ void DisplayTask(void *params)
 	// FIRST FIXED POSITION HEADERS ////
 	char *temperature_title = "Temperature:";
 	char *time_title = "Time:";
-	char temp_conv[5];
-	float temp_raw;
+	// char temp_conv[6];
+	// float temp_raw;
 
 	char *time_str_temp;
 
@@ -147,11 +100,21 @@ void DisplayTask(void *params)
 	printStrScreen(&dev, fx32L, temperature_title, 3);
 	printStrScreen(&dev, fx32L, time_title, 7);
 
+	char *temp_to_screen;
+	
+	
 	while (1)
 	{
-		temp_raw = readTemperature();
-		floatToString(temp_raw, temp_conv, 3);
-		printStrScreen(&dev, fx32L, temp_conv, 5);
+		
+		if (xQueueReceive(collectDataQueue, &temp_to_screen, portMAX_DELAY))
+		{
+
+			printStrScreen(&dev, fx32L, temp_to_screen, 5);
+		}
+
+		// temp_raw = readTemperature();
+		// floatToString(temp_raw, temp_conv, 3);
+		
 		if (is_connected == true)
 		{
 			printStrScreen(&dev, fx32L, "       ", 9);
@@ -197,10 +160,9 @@ void ledStripTask(void *params)
 	ESP_LOGI(TAG, "LED Rainbow Chase Start");
 
 	float temperature;
-
 	while (1)
 	{
-		temperature = readTemperatureUint8();
+		xQueueReceive(collectDataQueue1, &temperature, portMAX_DELAY);
 		// temperature = 10;
 		uint8_t decoded_temp = 100;
 		for (int i = temperature; i > 0; i--)
@@ -221,7 +183,7 @@ void ledStripTask(void *params)
 			ESP_ERROR_CHECK(strip->refresh(strip, 100));
 		}
 		// Flush RGB values to LEDs
-		vTaskDelay(1000 * 5 / portTICK_PERIOD_MS);
+		vTaskDelay(1000 * 10 / portTICK_PERIOD_MS);
 	}
 }
 
@@ -265,6 +227,41 @@ void ledStripTask(void *params)
 // 	}
 // }
 
+
+void data_collect_task(void *param)
+{
+	i2c_lm75_init();
+	char temp_conv[7];
+	char *temp_buff = temp_conv;
+
+	float temp_raw;
+
+	while (1)
+	{
+	
+	// temperature reading
+	// convert float to string
+	temp_raw = readTemperature();
+	floatToString( temp_raw, temp_conv, 3);
+
+	xQueueSend(collectDataQueue, &temp_buff, 0);
+	xQueueSend(collectDataQueue1, &temp_raw, 0);
+
+	// if(xQueueSend(collectDataQueue, &temp_buff, 0))
+	// {
+
+	// 	printf("added message to log queue %s  \n", temp_buff);
+    // }
+    // else
+    // {
+    //     printf("failed to add message to log queue\n");
+        
+    // }
+	vTaskDelay(2000 / portTICK_PERIOD_MS);
+	}
+
+}
+
 void server_task(void *param)
 {
 
@@ -284,28 +281,38 @@ void MQTT_task(void *param)
 {
 	// will be apply only when wifi connection ok
 	xSemaphoreTake(connectionSemaphore, portMAX_DELAY);
+	float temperature;
+	
 	MQTT_app_start();
 	while(true)
 	{
+		xQueueReceive(collectDataQueue1, &temperature, portMAX_DELAY);
 		// ESP_LOGI(TAG_SYSTEM, "mqtt task test");
 		mqtt_send_time();
-		mqtt_send_temperature();
+		mqtt_send_temperature(temperature);
 
-		vTaskDelay(1000 * 60 / portTICK_PERIOD_MS);
+		
+		vTaskDelay(5000 / portTICK_PERIOD_MS);
 	}
 }
 
 
+
+
 void app_main(void)
 {
-	connectionSemaphore = xSemaphoreCreateBinary();
-	//connect_sem = xSemaphoreCreateBinary();
-	i2c_lm75_init();
 	init_btn();
-	
+	connectionSemaphore = xSemaphoreCreateBinary();
+	collectDataQueue = xQueueCreate(8, sizeof(char*));
+	collectDataQueue1 = xQueueCreate(1, sizeof(float));
+	setTemperatureQueue = xQueueCreate(1, sizeof(uint8_t));
+	//connect_sem = xSemaphoreCreateBinary();
+	xTaskCreate(data_collect_task, "data_collect_task", 1024 * 3, NULL, 0, NULL);
+
 	xTaskCreate(DisplayTask, "ILI9340", 1024 * 3, NULL, 0, NULL);
 	xTaskCreate(ledStripTask, "ws2812", 1024 * 2, NULL, 0, NULL);
 	//xTaskCreate(makeJson, "makeJson", 1024 * 2, NULL, 2, NULL);
 	xTaskCreatePinnedToCore(server_task, "server task", 1024 * 5, NULL, 5, NULL, 0);
-	xTaskCreate(MQTT_task, "MQTT_task", 1024 * 2, NULL, 0, &MQTTtaskHandle);
+	xTaskCreate(MQTT_task, "MQTT_task", 1024 * 2, NULL, 0, NULL);
+	xTaskCreate(ac_cmd_task, "ac_cmd_task", 1024 * 2, NULL, 0, NULL);
 }

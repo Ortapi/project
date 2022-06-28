@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
@@ -19,21 +20,22 @@
 #include "ntp_time.h"
 
 #define TAG "MQTT"
+extern QueueHandle_t collectDataQueue1;
+extern QueueHandle_t setTemperatureQueue;
+// TaskHandle_t MQTTtaskHandle;
 
-TaskHandle_t MQTTtaskHandle;
+
+static bool ac_on_off = false;
 
 esp_mqtt_client_handle_t client = NULL;
-// extern SemaphoreHandle_t connectionSemaphore;
+extern SemaphoreHandle_t connectionSemaphore;
 
 //HIVEMQ MQTT cloude server cerificate
 extern const uint8_t isrgrootx1[] asm("_binary_isrgrootx1_pem_start");
 
 
-// static const int WIFI_CONNECTED = BIT0;
-// static const int MQTT_CONNECTED = BIT1;
-// static const int MQTT_PUBLISHED = BIT2;
-
-// static const int MQTT_SEND          = BIT3;
+// static const int AC_SYSTEM_ON = BIT0;
+// static const int AC_SYSTEM_OFF = BIT1;
 
 
 void mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
@@ -43,7 +45,8 @@ void mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
   {
   case MQTT_EVENT_CONNECTED:
     ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
-    esp_mqtt_client_subscribe(client, MQTT_CLIENT_SUBSCRIBE, 2);
+    esp_mqtt_client_subscribe(client, MQTT_SUBSCRIBE_LED, 2);
+    esp_mqtt_client_subscribe(client, MQTT_SUBSCRIBE_SET, 2);
     //xTaskNotify(MQTTtaskHandle, MQTT_CONNECTED, eSetValueWithOverwrite);
     break;
   case MQTT_EVENT_DISCONNECTED:
@@ -65,7 +68,7 @@ void mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
     printf("DATA=%.*s\r\n", event->data_len, event->data);
     // char *data_mqtt;
     // data_mqtt = event->data;
-    mqtt_check_bool(event->data, event->data_len);
+    // mqtt_get_data(event->data, event->data_len ,event->topic ,event->topic_len);
     break;
   case MQTT_EVENT_ERROR:
     ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
@@ -124,54 +127,136 @@ void MQTT_app_start(void)
 void mqtt_send_time(void){
   char *time_str_temp;
   time_str_temp = print_time_str();
-  esp_mqtt_client_publish(client, MQTT_TOPIC_TIME, time_str_temp, strlen(time_str_temp), 0, false);
+  esp_mqtt_client_publish(client, MQTT_TOPIC_TIME, time_str_temp, strlen(time_str_temp), 2, false);
 }
 
-void mqtt_send_temperature(void){
+void mqtt_send_temperature(float temperature){
   char temp_conv[4];
-	float temp_raw;
-  temp_raw = readTemperature();
+
 	// convert float to string
-	floatToString(temp_raw, temp_conv, 3);
-  esp_mqtt_client_publish(client, MQTT_TOPIC_TEMPERATURE, temp_conv, 4, 0, false);
+	floatToString(temperature, temp_conv, 3);
+  esp_mqtt_client_publish(client, MQTT_TOPIC_TEMPERATURE, temp_conv, 4, 2, false);
 }
 
-void mqtt_check_bool(char *str, int size){
+void mqtt_publish_messege(char *msg){
+  
+  esp_mqtt_client_publish(client, MQTT_TOPIC_MESSEGE, msg, strlen(msg), 2, false);
+}
 
-    uint8_t i = 0;
-    // char str_arr = str[0];
-    char str_arr[size];
-    // memset(str_arr, size, sizeof(char));
 
-    // int count = 0;
-    if (size == 1)
+
+
+
+
+
+void mqtt_get_data(char *data_str, int data_size, char *topic, int topic_size)
+{
+  uint8_t set_temperature;
+  uint8_t uint_data;
+
+  char topic_buffer[topic_size];
+  char data_buffer[data_size];
+  int i = 0;
+
+  for(i = 0; i <= topic_size; i++) {
+    if(i == topic_size) topic_buffer[i] = '\0';
+      else topic_buffer[i] = topic[i];
+    }
+
+    for(i = 0; i <= data_size; i++) {
+        if(i == data_size) data_buffer[i] = '\0';
+        else data_buffer[i] = data_str[i];
+    }
+
+    printf("mqtt_get_data TOPIC= %s \r\n", topic_buffer);
+    printf("mqtt_get_data DATA= %s \r\n", data_buffer);
+  
+
+
+  if (strcmp(topic_buffer, "set") == 0)
+  {
+    set_temperature = (uint8_t)atoi(data_buffer);
+    printf("mqtt set temp: %d \n", set_temperature);
+    mqtt_publish_messege("TEMPERATURE IS SET TO:");
+    esp_mqtt_client_publish(client, MQTT_TOPIC_MESSEGE, data_buffer, strlen(data_buffer), 2, false);
+    xQueueSend(setTemperatureQueue, &set_temperature, 0);
+  }
+
+  if (strcmp(topic_buffer, "led") == 0)
+  {
+      uint_data = (uint8_t)atoi(data_buffer);
+      // char checkStr[] = "led topic check";
+      // esp_mqtt_client_publish(client, MQTT_TOPIC_MESSEGE, checkStr, strlen(checkStr), 2, false);
+      if (uint_data == 1)
+      {
+        ac_on_off = true;
+        // printf("ac_on_off true \n");
+        mqtt_publish_messege("ON!");
+        // xTaskNotify(MQTTtaskHandle, AC_SYSTEM_ON, eSetValueWithOverwrite);
+      }
+      if (uint_data == 0)
+      {
+        ac_on_off = false;
+        // printf("ac_on_off false \n");
+        mqtt_publish_messege("OFF!");
+        // xTaskNotify(MQTTtaskHandle, AC_SYSTEM_OFF, eSetValueWithOverwrite);
+      }
+  }
+}
+
+void ac_cmd_task(void *param)
+{
+// xSemaphoreTake(connectionSemaphore, portMAX_DELAY);
+  
+  // bool high_hysteresis_checkd = false;
+  // bool low_hysteresis_checkd = false;
+  // bool off_state_checked = true;
+
+  // default temperature
+  uint8_t set_temperature = 25;
+  float temperature_sensor;
+
+    while (1)
+  {
+
+    // get the wanted temperature from user by queue
+    if (xQueueReceive(setTemperatureQueue,&set_temperature, 0))
     {
-        for (i = 0; i < size; i++)
-        {
-            // count++;
-            str_arr[i] = str[i];
-            // printf("str = %c \n" , str_arr[i]);
-            // printf("count = %d \n" , count);
-        }
+      printf("QueueReceive set_temperature %d  \n", set_temperature);
+    }
 
-        if (str_arr[0] == '1')
+    if (ac_on_off == true)
+    {
+      // printf("inside true ac_on_off if \n");
+      
+      if (xQueueReceive(collectDataQueue1,&temperature_sensor, 0))
+      {
+        // printf("QueueReceive temperature_sensor %d  \n", (uint8_t)temperature_sensor);
+        
+        if ((uint8_t)temperature_sensor > set_temperature + 1)
         {
+          // printf("hysteresis is high -- relay on \n");
           toggle_led(true);
-          ESP_LOGI(TAG, "MQTT relay on");
         }
-        else if (str_arr[0] == '0')
-        {
-            toggle_led(false);
-            ESP_LOGI(TAG, "MQTT relay off");
-        }
-        else{
-            ESP_LOGI(TAG, "MQTT relay not bool received");
-        }
-    }
-    if (size > 1)
-    {
-        ESP_LOGI(TAG, "MQTT relay bool payload > 1");
-    }
-    
 
+        if ((uint8_t)temperature_sensor < set_temperature - 1)
+        {
+          // printf("hysteresis is low -- relay off \n");
+          toggle_led(false);
+        }
+      }
+    }
+
+    if (ac_on_off == false)
+    {
+      toggle_led(false);
+      // printf("inside false ac_on_off if \n");
+    }
+
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+  }
+  
 }
+
+
+

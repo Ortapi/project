@@ -1591,3 +1591,55 @@ void xptGetxy(TFT_t * dev, int *xp, int *yp){
 	*yp = xptGetit(dev, (XPT_START | XPT_YPOS | XPT_SER) );
 #endif
 }
+
+void printStrScreen(TFT_t *dev, FontxFile *fx, char *str, int row)
+{
+	uint16_t row_y;
+	switch (row)
+	{
+	case 1:
+		row_y = 24;
+		break;
+	case 2:
+		row_y = 48;
+		break;
+	case 3:
+		row_y = 72;
+		break;
+	case 4:
+		row_y = 96;
+		break;
+	case 5:
+		row_y = 120;
+		break;
+	case 6:
+		row_y = 144;
+		break;
+	case 7:
+		row_y = 168;
+		break;
+	case 8:
+		row_y = 192;
+		break;
+	case 9:
+		row_y = 216;
+		break;
+	default:
+		row_y = 240;
+		break;
+	}
+
+	// get font width & height
+	uint8_t buffer[FontxGlyphBufSize];
+	uint8_t fontWidth;
+	uint8_t fontHeight;
+	GetFontx(fx, 0, buffer, &fontWidth, &fontHeight);
+
+	uint8_t ascii[24];
+
+	uint16_t ypos = ((CONF_TFT_HEIGHT - fontHeight) / 2) - 1;
+	uint16_t xpos = (CONF_TFT_WIDTH - (strlen((char *)ascii) * fontWidth)) / 2;
+
+	strcpy((char *)ascii, str);
+	lcdDrawString(dev, fx, (uint16_t)10, (uint16_t)row_y, ascii, BLACK);
+}

@@ -111,5 +111,6 @@ void lcdResetScrollArea(TFT_t * dev, uint16_t vsa);
 void lcdScroll(TFT_t * dev, uint16_t vsp);
 int xptGetit(TFT_t * dev, int cmd);
 void xptGetxy(TFT_t * dev, int *xp, int *yp);
+void printStrScreen(TFT_t *dev, FontxFile *fx, char *str, int row);
 #endif /* MAIN_ILI9340_H_ */
 

@@ -1,14 +1,14 @@
 
 <script lang="ts">
-    let isOn = false;
-    async function onClick(on_off: boolean) {
-      isOn = on_off;
-      await fetch("/api/toggle-led", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ is_on: isOn }),
-      });
-    };
+    // let isOn = false;
+    // async function onClick(on_off: boolean) {
+    //   isOn = on_off;
+    //   await fetch("/api/toggle-led", {
+    //     method: "POST",
+    //     headers: { "Content-Type": "application/json" },
+    //     body: JSON.stringify({ is_on: isOn }),
+    //   });
+    // };
 
     //let disabled = false;
     //let promise = Promise.resolve([]);
@@ -55,7 +55,7 @@
   {:catch error}
     <p style="color: red">{error.message}</p>
   {/await}
-  </div>
+</div>
 
   <div class="bg-indigo-300 object-cover flex-col p-8 text-center ">
     <h2>Temperature:</h2>
@@ -66,7 +66,7 @@
     {:catch error}
       <p style="color: red">{error.message}</p>
     {/await}
-    </div>
+  </div>
 
 <!-- <div class="bg-indigo-300 object-cover flex-col p-8 text-center ">
     <h2>TIME:</h2>
@@ -86,7 +86,7 @@
   </h2>
 </div> -->
 
-<div class="bg-indigo-300 object-cover flex-col p-8 text-center ">
+<!-- <div class="bg-indigo-300 object-cover flex-col p-8 text-center ">
     <h2>Switch On/Off:</h2>
     {#if isOn}
     <input on:click={() => onClick(false)} type="checkbox" class="toggle toggle-lg" checked>
@@ -94,9 +94,9 @@
     <input on:click={() => onClick(true)} type="checkbox" class="toggle toggle-lg" unchecked>
     {/if}
 
-    <!-- <h2>Push to Refresh data:</h2>
-    <button class="btn btn-active" on:click = {handleClick} {disabled}>refresh</button> -->
-</div>
+    <h2>Push to Refresh data:</h2>
+    <button class="btn btn-active" on:click = {handleClick} {disabled}>refresh</button>
+ -->
 
 
 
